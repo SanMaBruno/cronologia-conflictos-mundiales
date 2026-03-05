@@ -1,0 +1,452 @@
+<!doctype html>
+<!--[if lt IE 9]><html class="ie8 ie"><![endif]-->
+<!--[if IE 9]><html class="ie9 ie"><![endif]-->
+<!--[if gt IE 9]><html class="ie"> <![endif]-->
+<!--[if !IE]><!--><html lang="es"><!--<![endif]-->
+	<head>
+		
+		<link rel="shortcut icon" href="favicon.ico" />
+		<meta charset="utf-8" />
+		<title>Poppy Field - Visualización de Víctimas de Guerra</title>
+
+		<meta property="og:title" content="Poppy Field - Víctimas de Guerra">
+		<meta property="og:url" content="http://www.poppyfield.org">
+		<meta property="og:image" content="http://www.poppyfield.org/img/PoppyField.png">
+		<meta property="og:type" content="website">
+		<meta property="og:site_name" content="Poppy Field - Visualización de Víctimas de Guerra">
+		<meta property="og:description" content="La Gran Guerra no acabó con todas las guerras. Poppy Field visualiza las víctimas de guerra desde principios del siglo XX hasta la actualidad (1899-2024). Datos actualizados con estadísticas de conflictos de UCDP/Our World in Data.">
+		<meta property="fb:app_id" content="1552093665022677">
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" type="text/css" href="css/libs/jquery-ui.min.css">
+		<link rel="stylesheet" type="text/css" href="css/libs/jquery.jscrollpane.css">
+		<link rel="stylesheet" type="text/css" href="css/style.css">
+	</head>
+	<body>
+
+		<div id="fb-root"></div>
+		<script>
+			(function(d, s, id) {
+			var js, fjs = d.getElementsByTagName(s)[0];
+			if (d.getElementById(id)) return;
+			js = d.createElement(s); js.id = id;
+			js.src = "//connect.facebook.net/es_LA/sdk.js#xfbml=1&appId=1552093665022677&version=v2.0";
+			fjs.parentNode.insertBefore(js, fjs);
+			}(document, 'script', 'facebook-jssdk'));
+		</script>
+
+		<div id="wrapper">
+
+			<div class="wrapper-inside">
+
+				<div class="intro">
+
+					<a href="index.html#" class="down-arrow">
+						<span class="icon"></span>
+					</a>
+
+					<div class="scroll-indicator">
+						<a href="index.html#" class="scroll-state scroll-state-0" data-index="0"></a>
+						<a href="index.html#" class="scroll-state scroll-state-1" data-index="1"></a>
+						<a href="index.html#" class="scroll-state scroll-state-2" data-index="2"></a>
+						<a href="index.html#" class="scroll-state scroll-state-3" data-index="3"></a>
+					</div>
+
+					<div class="caption-line"></div>
+
+					<img src="img/skin/flower.svg" class="main-flower">
+					
+					<div class="block block-intro">
+						<svg class="bg-inside"></svg>
+						<h3 class="date">1899 &ndash; 2024</h3>
+						<h1 class="title">La Gran Guerra</h1>
+						<h2 class="subtitle">y más allá</h2>
+					</div>
+
+					<div class="block block-caption">
+
+						<div class="caption-stem"></div>
+						<div class="caption-circle"></div>
+						
+						<div class="block-caption-detail caption-death">
+							<div class="caption-title">Más de</div>
+							<div class="caption-number">10,5 millones<br>de muertes</div>
+						</div>
+						<div class="block-caption-detail caption-duration">
+							<div class="caption-title">Duración</div>
+							<div class="caption-number">4 años</div>
+						</div>
+
+						<div class="block-caption-detail caption-start caption-center">
+							<div class="caption-title">Inicio</div>
+							<div class="caption-number">1914</div>
+						</div>
+						<div class="block-caption-detail caption-end caption-center">
+							<div class="caption-title">Fin</div>
+							<div class="caption-number">1918</div>
+						</div>
+
+						<div class="block-caption-text">
+							<p>
+								La Gran Guerra, también conocida como la Primera Guerra Mundial, fue un conflicto global centrado en Europa.<br>
+								Comenzó el 28 de julio de 1914 y terminó el 11 de noviembre de 1918, cobrándose más de 10,5 millones de muertes en combate.
+							</p>
+						</div>
+
+					</div>
+
+					<div class="block block-text">
+						<h3 class="date">Día del Recuerdo</h3>
+						<div class="text">
+							<p>
+								Tras el fin de la Primera Guerra Mundial, la amapola se convirtió en símbolo de conmemoración. Fue una de las primeras plantas en florecer en los campos de batalla devastados de Europa. Su color, evocador del derramamiento de sangre,<br>y su naturaleza resistente pero delicada evocan la<br>relación humana con la guerra.
+							</p>
+						</div>
+					</div>
+
+					<div class="block block-explore">
+
+						<h3 class="date">Campo de Amapolas</h3>
+						<div class="text">
+							<p>
+								La Primera Guerra Mundial fue inicialmente llamada <span class="italic">la guerra<br>que acabaría con todas las guerras.</span> Lamentablemente, el mundo ha sido testigo<br>de más de 300 conflictos en los 125 años transcurridos.<br>Poppy Field reflexiona sobre el costo humano de la guerra<br>desde principios del siglo 20<span class="sup"></span> hasta la actualidad.
+							</p>
+						</div>
+						<div class="block-explore-btn">
+							<a href="https://www.poppyfield.org/graph" class="btn btn-explore">
+								<span class="bg"></span>
+								<span class="text">Explorar</span>
+							</a>
+						</div>
+
+					</div>
+				</div>
+
+				<div class="block block-graph">
+
+					<div class="bg-graph"></div>
+					<div class="bg-graph-2"></div>
+
+					<svg id="graph" viewBox="0 0 1280 750" preserveAspectRatio="xMidYMid">
+
+						<defs>
+							<filter id="outline">
+								<feMorphology in="SourceAlpha" result="morphed" operator="dilate" radius="1" />
+								<feColorMatrix in="morphed" result="recolored" type="matrix" values="-1 0 0 0 1, 0 -1 0 0 1, 0 0 -1 0 1, 0 0 0 1 0"/>
+								<feMerge>
+									<feMergeNode in="recolored"/>
+									<feMergeNode in="SourceGraphic"/>
+								</feMerge>
+							</filter>
+							<filter id="shadow">
+								<feGaussianBlur in="SourceAlpha" stdDeviation="1" />
+								<feMerge>
+									<feMergeNode />
+									<feMergeNode in="SourceGraphic" />
+								</feMerge>
+							</filter>
+						</defs>
+
+					</svg>
+
+					<div class="block-filter-date">
+						<span class="filter-title">Línea de tiempo</span>
+						<div class="filter filter-date"></div>
+						<div class="date-indicator">
+							<div class="indicator-text">0000</div>
+						</div>
+					</div>
+
+					<div class="block-filter-top">
+						
+						<div class="block-filter-search">
+							<div class="search-wrapper">
+								<input class="search-input" placeholder="Buscar país o conflicto..." type="text" value="">
+								<span class="search-clear">&times;</span>
+								<div class="search-results"></div>
+							</div>
+						</div>
+
+						<div class="block-filter-regions">
+							<h4>Filtrar por Ubicación</h4>
+							<a class="btn btn-filter" data-region="africa" href="index.html#" style="background-color:#AE0F0A;">
+								<span class="filter-text">África</span>
+							</a>
+							<a class="btn btn-filter" data-region="asia" href="index.html#" style="background-color:#E30613;">
+								<span class="filter-text">Asia</span>
+							</a>
+							<a class="btn btn-filter" data-region="europe" href="index.html#" style="background-color:#E35E06;">
+								<span class="filter-text">Europa</span>
+							</a>
+							<a class="btn btn-filter" data-region="north-america" href="index.html#" style="background-color:#B70D4D;">
+								<span class="filter-text">Norteamérica</span>
+							</a>
+							<a class="btn btn-filter" data-region="south-america" href="index.html#" style="background-color:#D2024B;">
+								<span class="filter-text">Sudamérica</span>
+							</a>
+						</div>
+
+						<div class="block-filter-death">
+							<h4>Filtrar por Número de Muertes</h4>
+
+							<div class="block-filter-death-inside">
+								<div class="death-label">
+									<span class="filter-text">Entre <span class="death-min"></span> y <span class="death-max"></span></span>
+									<span class="filter-icon"></span>
+								</div>
+								<div class="filter filter-death"></div>
+							</div>
+						</div>
+
+					</div>
+
+					<div class="graph-overlay">
+
+						<svg id="clone-graph" viewBox="0 0 1280 750" preserveAspectRatio="xMidYMid"></svg>
+						<div class="bg-top-flower"></div>
+
+						<div class="block-graph-overlay">
+
+							<a href="index.html#" class="btn btn-close"></a>
+
+							<div class="graph-overlay-header">
+								<div class="line"></div>
+								<div class="graph-overlay-header-title"></div>
+								<div class="graph-overlay-header-date"></div>
+								<div class="line line-bottom"></div>
+							</div>
+
+							<div class="graph-overlay-content">
+
+								<table>
+									<tbody>
+										<tr class="duration">
+											<td class="title">Duración</td>
+											<td class="content"></td>
+										</tr>
+										<tr class="fatalities">
+										<td class="title">Víctimas (total)</td>
+										<td class="content"></td>
+									</tr>
+									<tr class="yearly-deaths">
+										<td class="title">Muertes por año</td>
+											<td class="content"></td>
+										</tr>
+										<tr class="location">
+											<td class="title">Ubicación</td>
+											<td class="content"></td>
+										</tr>
+										<tr class="participants">
+											<td class="title">Participantes</td>
+											<td class="content">
+												<div class="list"></div>
+											</td>
+										</tr>
+										<tr class="source">
+											<td class="title">Datos</td>
+											<td>
+												<a target="_blank" href="index.html#">Ver fuente</a>
+											</td>
+										</tr>
+										<tr class="notes">
+											<td class="title">Notas</td>
+											<td class="content"></td>
+										</tr>
+									</tbody>
+								</table>
+
+								<div class="war-nav"></div>
+
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="overlay-btns">
+					
+					<div class="btn-overlay info">
+						<a href="index.html#" class="btn btn-info">
+							<span class="info-text">i</span>
+						</a>
+						<div class="block-btn-info">
+							Información
+						</div>
+					</div>
+					<div class="btn-overlay tw">
+						<a href="index.html#" class="btn btn-twitter">
+							<span class="btn-icon"></span>
+						</a>
+						<div class="block-twitter">
+							<a href="https://twitter.com/share" class="twitter-share-button" data-text="La Gran Guerra no acabó con todas las guerras. Poppy Field visualiza las víctimas de guerra desde 1900 por @defilippovale & @tanaki" data-url="http://www.poppyfield.org"></a>
+							<script>
+								!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+							</script>
+						</div>
+					</div>
+					<div class="btn-overlay fb">
+						<a href="index.html#" class="btn btn-facebook">
+							<span class="btn-icon"></span>
+						</a>
+						<div class="block-fb">
+							<div class="fb-share-button" data-href="http://www.poppyfield.org" data-layout="button_count"></div>
+						</div>
+					</div>
+					<div class="btn-overlay back">
+						<a href="index.html#" class="btn btn-back">
+							<span class="btn-icon"></span>
+						</a>
+						<div class="block-btn-back">
+							Volver
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<div class="overlay-content">
+			
+			<a href="index.html#" class="btn btn-close-overlay"></a>
+
+			<div class="overlay-inside">
+				
+				<div class="block-quote">
+					<div class="quote-text">
+						En los campos de Flandes las amapolas crecen<br>
+						Entre las cruces, fila tras fila,<br>
+						Que marcan nuestro lugar; y en el cielo<br>
+						Las alondras, aún cantando con valentía, vuelan<br>
+						Apenas oídas entre los cañones abajo.
+					</div>
+					<div class="quote-author">Coronel John McCrae,<br>de En los campos de Flandes, 1915</div>
+				</div>
+
+				<div class="col-top">
+
+					<div class="left-col">
+
+						<p>
+							<strong>Poppy Field</strong> es un proyecto independiente – una reflexión sobre las vidas humanas perdidas en la guerra.
+						</p>
+
+						<p>
+							Este año se conmemora el centenario de la Gran Guerra. Fue una guerra sin paralelo: su escala de destrucción eclipsó todos los conflictos anteriores. Lamentablemente, el sacrificio de vidas no terminó con «la guerra que acabaría con todas las guerras».
+						</p>
+
+						<div class="block-media">
+							<img src="img/explanation.png" class="media-img">
+							<div class="media-text">
+								<p>
+									En la visualización interactiva, cada amapola representa una guerra desde 1900. El tallo crece desde el año en que comenzó la guerra y la flor aparece en el año en que terminó. Su tamaño muestra el número de muertes y la variación de color representa las áreas involucradas.
+								</p>
+							</div>
+						</div>
+
+					</div>
+
+					<div class="right-col">
+						
+						<h4>Los datos</h4>
+
+						<p>
+							<a href="http://www.war-memorial.net/res_sources.asp?q=3" target="_blank">The Polynational War Memorial</a> proporcionó todos los datos fuente. Ten en cuenta que esta investigación es un trabajo en progreso y la información puede estar incompleta. En los pocos casos donde se utilizan fuentes alternativas, estas se citan en las notas del conflicto.
+						</p>
+
+						<p>
+							Este proyecto no presenta un argumento, ni es nuestra intención ofrecer una conclusión sobre el tema. Más bien deseamos reflexionar sobre el costo humano de la guerra y reconocer el centenario de la Gran Guerra.
+						</p>
+
+					</div>
+				</div>
+
+				<div class="col-bottom">
+
+					<div class="left-col">
+
+						<h4>Créditos</h4>
+
+						<div class="credit">
+							<a href="http://www.valentinadefilippo.co.uk/" target="_blank">Valentina D'Efilippo</a> - Diseño<br>
+							<a href="http://cargocollective.com/nicopigelet" target="_blank">Nicolas Pigelet</a> - Código
+						</div>
+
+						<h4>Agradecimientos especiales</h4>
+
+						<p class="special-thanks">
+							Jon Brunberg por su investigación <a href="http://www.war-memorial.net/" target="_blank">The Polynational War Memorial</a><br>
+							Timothy Sondreal por la investigación de datos y edición de contenido<br>
+							Mathias Dahlstr&ouml;m por su apoyo y asesoría con D3<br>
+							James Ball, coautor del libro The Infographic History of the World
+						</p>
+
+					</div>
+
+					<div class="right-col">
+
+						<div class="block-media">
+							<img src="img/the-book.png" class="media-img">
+							<div class="media-text">
+								<p>
+									Poppy Field fue publicado por primera vez en <br><a href="https://www.facebook.com/TheInfographicHistoryOfTheWorld" target="_blank">The Infographic History of the World</a>, un libro que narra la historia a través de visualización de datos e infografía narrativa
+								</p>
+								<a href="http://www.amazon.co.uk/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=valentina%20d%27efilippo" target="_blank" class="btn btn-order">
+									<span class="bg"></span>
+									<span class="text">Comprar el libro en línea</span>
+								</a>
+							</div>
+						</div>
+						<p class="small">
+							* Los datos fuente han sido actualizados desde que se publicó el libro
+						</p>
+
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<div class="mobile-only">
+			<div class="mobile-infographic"></div>
+			<div class="mobile-bg"></div>
+			<div class="border-inside"></div>
+			<div class="mobile-text">
+				<p>
+					Lo sentimos, esta experiencia aún no está disponible para dispositivos móviles. <br>
+					Por favor, pruébala en un escritorio.
+				</p>
+				<a href="img/PoppyField.jpg" class="btn btn-mobile">
+					<span class="bg"></span>
+					<span class="text">Ver infografía estática</span>
+				</a>
+			</div>
+		</div>
+
+		<img src="img/skin/bg-caption-line.png" class="img-preload">
+		<img src="img/skin/bg-circle-dotted.png" class="img-preload">
+		<img src="img/skin/bg-graph-overlay.png" class="img-preload">
+		<img src="img/skin/bg-graph.jpg" class="img-preload">
+
+		<!-- LIBS -->
+		<script type="text/javascript" src="js/libs/jquery-1.11.1.min.js"></script>
+		<script type="text/javascript" src="js/libs/TweenMax.min.js"></script>
+		<script type="text/javascript" src="js/libs/ScrollToPlugin.min.js"></script>
+		<script type="text/javascript" src="js/libs/d3.min.js"></script>
+		<script type="text/javascript" src="js/libs/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="js/libs/jquery.mousewheel.js"></script>
+		<script type="text/javascript" src="js/libs/jquery.jscrollpane.min.js"></script>
+
+		<!-- COMPILED SCRIPT -->
+		<script type="text/javascript" src="js/PS.js"></script>
+
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-56202905-1', 'auto');
+			ga('send', 'pageview');
+		</script>
+	</body>
+</html>
