@@ -7,7 +7,7 @@ import csv
 from collections import defaultdict
 
 UCDP_CSV = 'scripts/data-sources/API_VC.BTL.DETH_DS2_es_csv_v2_32063/deaths-in-armed-conflicts-based-on-where-they-occurred.csv'
-MAIN_CSV = 'site/data/PoppyDataCSV.csv'
+MAIN_CSV = 'data/PoppyDataCSV.csv'
 
 # Map from our Spanish war names to UCDP entity names
 WAR_TO_ENTITY = {

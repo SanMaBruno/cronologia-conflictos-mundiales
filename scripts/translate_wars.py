@@ -4,8 +4,8 @@ Translate all 262 original war names and participation fields to Spanish.
 """
 import csv
 
-INPUT_CSV = 'site/data/PoppyDataCSV.csv'
-OUTPUT_CSV = 'site/data/PoppyDataCSV.csv'
+INPUT_CSV = 'data/PoppyDataCSV.csv'
+OUTPUT_CSV = 'data/PoppyDataCSV.csv'
 
 # Complete translation map for war names (English -> Spanish)
 WAR_NAME_TRANSLATIONS = {

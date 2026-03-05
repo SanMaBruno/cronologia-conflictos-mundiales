@@ -11,7 +11,7 @@
 
 <br>
 
-<img src="site/img/PoppyField.jpg" alt="Poppy Field — Visualización de víctimas de guerra" width="700">
+<img src="img/PoppyField.jpg" alt="Poppy Field — Visualización de víctimas de guerra" width="700">
 
 <br>
 
@@ -47,63 +47,61 @@ Su **tamaño** refleja el número de víctimas. Su **posición** marca la duraci
 ```
 cronologia-conflictos-mundiales/
 │
+├── 📄 index.html                      ← Página principal
 ├── 📄 README.md
 ├── 📄 .gitignore
+├── 📄 favicon.ico
 │
-├── 🌐 site/                          ← Aplicación web (desplegable)
-│   ├── index.html                     ← Página principal
-│   ├── favicon.ico
-│   │
-│   ├── css/
-│   │   ├── style.css                  ← Estilos principales + búsqueda + muertes anuales
-│   │   ├── fonts/                     ← Tipografías (ACaslonPro, CenturyGothic)
-│   │   └── libs/                      ← CSS de librerías (jQuery UI, jScrollPane)
-│   │       └── images/                ← Imágenes de jQuery UI
-│   │
-│   ├── js/
-│   │   ├── PS.js                      ← Lógica principal de la visualización
-│   │   │                                 ├─ PS.Graph          → gráfico D3, ejes, escalas
-│   │   │                                 ├─ PS.Graph.Overlay  → panel de detalle
-│   │   │                                 ├─ PS.Graph.War      → modelo de datos de conflicto
-│   │   │                                 ├─ PS.Graph.Poppy    → SVG por región
-│   │   │                                 ├─ PS.Filter.Date    → filtro de línea de tiempo
-│   │   │                                 ├─ PS.Filter.Death   → filtro por víctimas
-│   │   │                                 ├─ PS.Filter.Region  → filtro por ubicación
-│   │   │                                 ├─ PS.Filter.Search  → búsqueda con autocompletado
-│   │   │                                 ├─ PS.Filter.Panel   → coordinador de filtros
-│   │   │                                 ├─ PS.Animation      → transiciones de estado
-│   │   │                                 └─ PS.Controls       → navegación intro/gráfico
-│   │   └── libs/                      ← Librerías JavaScript
-│   │       ├── d3.min.js              ← D3.js v3 (visualización SVG)
-│   │       ├── jquery-1.11.1.min.js   ← jQuery (DOM, eventos, AJAX)
-│   │       ├── jquery-ui.min.js       ← jQuery UI (sliders)
-│   │       ├── TweenMax.min.js        ← GreenSock (animaciones)
-│   │       ├── ScrollToPlugin.min.js  ← GreenSock ScrollTo
-│   │       ├── jquery.jscrollpane.min.js ← ScrollPane personalizado
-│   │       └── jquery.mousewheel.js   ← Soporte mousewheel
-│   │
-│   ├── data/
-│   │   └── PoppyDataCSV.csv          ← Dataset principal (310 conflictos)
-│   │                                     Columnas: wars, from, to, duration, notes,
-│   │                                     participation, who, where, fatalities,
-│   │                                     url_source, links, yearly_deaths
-│   │
-│   └── img/
-│       ├── PoppyField.jpg            ← Imagen de portada
-│       ├── explanation.png           ← Diagrama explicativo
-│       ├── the-book.png              ← Imagen del libro
-│       ├── skin/                     ← UI assets (fondos, sprites, íconos)
-│       └── svg/                      ← Flores SVG por región geográfica
-│           ├── Africa.svg
-│           ├── Asia.svg
-│           ├── Europe.svg
-│           ├── Europe-Africa.svg
-│           ├── Europe-Asia.svg
-│           ├── Global.svg
-│           ├── North-America.svg
-│           └── South-America.svg
+├── 🎨 css/                            ← Estilos
+│   ├── style.css                      ← Estilos principales + búsqueda + muertes anuales
+│   ├── fonts/                         ← Tipografías (ACaslonPro, CenturyGothic)
+│   └── libs/                          ← CSS de librerías (jQuery UI, jScrollPane)
+│       └── images/                    ← Imágenes de jQuery UI
 │
-└── 🔧 scripts/                       ← Scripts de procesamiento de datos
+├── ⚙️ js/                             ← JavaScript
+│   ├── PS.js                          ← Lógica principal de la visualización
+│   │                                     ├─ PS.Graph          → gráfico D3, ejes, escalas
+│   │                                     ├─ PS.Graph.Overlay  → panel de detalle
+│   │                                     ├─ PS.Graph.War      → modelo de datos de conflicto
+│   │                                     ├─ PS.Graph.Poppy    → SVG por región
+│   │                                     ├─ PS.Filter.Date    → filtro de línea de tiempo
+│   │                                     ├─ PS.Filter.Death   → filtro por víctimas
+│   │                                     ├─ PS.Filter.Region  → filtro por ubicación
+│   │                                     ├─ PS.Filter.Search  → búsqueda con autocompletado
+│   │                                     ├─ PS.Filter.Panel   → coordinador de filtros
+│   │                                     ├─ PS.Animation      → transiciones de estado
+│   │                                     └─ PS.Controls       → navegación intro/gráfico
+│   └── libs/                          ← Librerías JavaScript
+│       ├── d3.min.js                  ← D3.js v3 (visualización SVG)
+│       ├── jquery-1.11.1.min.js       ← jQuery (DOM, eventos, AJAX)
+│       ├── jquery-ui.min.js           ← jQuery UI (sliders)
+│       ├── TweenMax.min.js            ← GreenSock (animaciones)
+│       ├── ScrollToPlugin.min.js      ← GreenSock ScrollTo
+│       ├── jquery.jscrollpane.min.js  ← ScrollPane personalizado
+│       └── jquery.mousewheel.js       ← Soporte mousewheel
+│
+├── 📊 data/                           ← Datos del proyecto
+│   └── PoppyDataCSV.csv              ← Dataset principal (310 conflictos)
+│                                         Columnas: wars, from, to, duration, notes,
+│                                         participation, who, where, fatalities,
+│                                         url_source, links, yearly_deaths
+│
+├── 🖼️ img/                            ← Recursos gráficos
+│   ├── PoppyField.jpg                 ← Imagen de portada
+│   ├── explanation.png                ← Diagrama explicativo
+│   ├── the-book.png                   ← Imagen del libro
+│   ├── skin/                          ← UI assets (fondos, sprites, íconos)
+│   └── svg/                           ← Flores SVG por región geográfica
+│       ├── Africa.svg
+│       ├── Asia.svg
+│       ├── Europe.svg
+│       ├── Europe-Africa.svg
+│       ├── Europe-Asia.svg
+│       ├── Global.svg
+│       ├── North-America.svg
+│       └── South-America.svg
+│
+└── 🔧 scripts/                        ← Scripts de procesamiento de datos
     ├── regenerate_ucdp_data.py        ← Genera los 48 conflictos UCDP (2015-2024)
     ├── add_yearly_deaths.py           ← Agrega desglose anual de muertes al CSV
     ├── translate_wars.py              ← Traduce 262 nombres de guerras al español
@@ -125,13 +123,13 @@ git clone https://github.com/SanMaBruno/cronologia-conflictos-mundiales.git
 cd cronologia-conflictos-mundiales
 
 # Opción 1: Python
-cd site && python3 -m http.server 8000
+python3 -m http.server 8000
 
 # Opción 2: Node.js
-npx serve site
+npx serve .
 
 # Opción 3: PHP
-cd site && php -S localhost:8000
+php -S localhost:8000
 ```
 
 Abrir **http://localhost:8000** en el navegador.
@@ -182,7 +180,7 @@ python3 scripts/add_yearly_deaths.py
 python3 scripts/translate_wars.py
 ```
 
-> Todos los scripts leen desde `scripts/data-sources/` y escriben en `site/data/PoppyDataCSV.csv`.
+> Todos los scripts leen desde `scripts/data-sources/` y escriben en `data/PoppyDataCSV.csv`.
 
 ---
 
@@ -245,6 +243,6 @@ python3 scripts/translate_wars.py
 
 <br>
 
-<img src="site/img/explanation.png" alt="Cómo leer la visualización" width="160">
+<img src="img/explanation.png" alt="Cómo leer la visualización" width="160">
 
 </div>

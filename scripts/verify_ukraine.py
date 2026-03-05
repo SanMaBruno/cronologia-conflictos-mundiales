@@ -1,6 +1,6 @@
 import csv
 
-with open('site/data/PoppyDataCSV.csv') as f:
+with open('data/PoppyDataCSV.csv') as f:
     for r in csv.DictReader(f):
         if 'ucraniana' in r['wars'].lower() or 'ucrania' in r['wars'].lower():
             print(f"{r['wars']:45s} | {r['from']}-{r['to']} | fatalities={r['fatalities']}")

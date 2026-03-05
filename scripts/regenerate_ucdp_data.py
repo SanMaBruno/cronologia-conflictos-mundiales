@@ -8,8 +8,8 @@ import csv
 from collections import defaultdict
 
 UCDP_FILE = 'scripts/data-sources/API_VC.BTL.DETH_DS2_es_csv_v2_32063/deaths-in-armed-conflicts-based-on-where-they-occurred.csv'
-ORIGINAL_CSV = 'site/data/PoppyDataCSV.csv'
-OUTPUT_CSV = 'site/data/PoppyDataCSV.csv'
+ORIGINAL_CSV = 'data/PoppyDataCSV.csv'
+OUTPUT_CSV = 'data/PoppyDataCSV.csv'
 
 # Load UCDP source data
 def load_ucdp():
