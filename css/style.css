@@ -456,7 +456,7 @@ html, body {
   position: absolute;
   top: 50%;
   left: 50%;
-  margin: 200px 0 0 -85px; }
+  margin: 230px 0 0 -85px; }
 #wrapper .block.block-explore .block-explore-btn a {
   position: relative;
   display: inline-block;
@@ -1018,7 +1018,7 @@ html, body {
   opacity: 0; }
 .block-filter-date .filter-title {
   position: absolute;
-  left: -75px;
+  left: -110px;
   top: -3px;
   font-size: 12px;
   font-family: "CenturyGothic", Helvetica, Verdana, Arial, sans-serif;
