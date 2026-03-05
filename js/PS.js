@@ -181,6 +181,9 @@ PS.Graph = {
 		this.durationScale = d3.scale.log().domain( d3.extent( this.data, function(d){ return d.fatalitiesInt; }) ).range([ 800, 1200 ]);
 		
 		this.draw();
+
+		// Initialize crosshair interaction on the main graph
+		PS.Crosshair.init( this.data, this.xScale, this.yScale );
 	},
 
 	draw : function ( ) {
@@ -732,6 +735,11 @@ PS.Graph = {
 
 		var self = this;
 
+		// Cancel any running transitions so stale "end" callbacks
+		// don't desynchronize the hidden/totalHidden counters
+		this.viz.selectAll('.war .flower').interrupt().transition();
+		this.viz.selectAll('.war .stem').interrupt().transition();
+
 		this.hidden = 0;
 		this.totalHidden = 0;
 
@@ -782,7 +790,7 @@ PS.Graph = {
 		toShow = $.arrayIntersect( toShow, this.searchShow );
 
 		if ( toShow.length === 0 ) {
-			self.paused = false;
+			this.paused = false;
 			return;
 		}
 
@@ -878,6 +886,9 @@ PS.Graph = {
 			.call( self.yAxis.scale(self.yScale) );
 
 		self.colorAxis( start, end );
+
+		// Keep crosshair year list in sync with new domain
+		if ( PS.Crosshair && PS.Crosshair.refresh ) PS.Crosshair.refresh();
 
 		self.paused = false;
 	},
@@ -1216,6 +1227,243 @@ PS.Graph.Poppy = PS.Graph.Poppy || {
 
 	}
 };
+
+
+/* =========================================================
+   PS.Crosshair — Vertical guide line + shared tooltip
+   on the existing poppy-field SVG (#graph).
+   Shows individual conflicts active at the hovered year,
+   respecting all active filters (date, region, deaths, search).
+   ========================================================= */
+
+PS.Crosshair = {
+
+	// Colour lookup – matches PS.Colors / SVG filenames
+	regionColor : {
+		'Africa'        : '#AE0F0A',
+		'Asia'          : '#E30613',
+		'Europe'        : '#E35E06',
+		'North-America' : '#B70D4D',
+		'South-America' : '#D2024B',
+		'Europe-Asia'   : '#E35E06',
+		'Europe-Africa' : '#E35E06',
+		'Global'        : '#888888'
+	},
+
+	regionLabel : {
+		'Africa'        : 'África',
+		'Asia'          : 'Asia',
+		'Europe'        : 'Europa',
+		'North-America' : 'Norteamérica',
+		'South-America' : 'Sudamérica',
+		'Europe-Asia'   : 'Europa / Asia',
+		'Europe-Africa' : 'Europa / África',
+		'Global'        : 'Global'
+	},
+
+	// References (set on init)
+	wars      : null,
+	xScale    : null,
+	yScale    : null,
+	viz       : null,
+	guideLine : null,
+	tooltip   : null,
+	lastYear  : null,
+
+	/* ---------- public ---------- */
+
+	init : function ( wars, xScale, yScale ) {
+
+		this.wars   = wars;
+		this.xScale = xScale;
+		this.yScale = yScale;
+		this.viz    = d3.select('#graph');
+
+		this.addGuide();
+		this.addOverlay();
+
+		this.tooltip = d3.select('.ch-tooltip');
+	},
+
+	/* ---------- helpers ---------- */
+
+	/** Return the list of wars currently passing all filters */
+	getVisibleWars : function () {
+		var g = PS.Graph;
+		var visible = [];
+		for ( var i = 0; i < this.wars.length; i++ ) {
+			var w = this.wars[i];
+			if ( g.dateShow.indexOf(w) > -1 &&
+			     g.regionShow.indexOf(w) > -1 &&
+			     g.deathShow.indexOf(w) > -1 &&
+			     g.searchShow.indexOf(w) > -1 ) {
+				visible.push(w);
+			}
+		}
+		return visible;
+	},
+
+	/** Primary region key for a war (first listed in location) */
+	primaryRegion : function ( w ) {
+		var loc = (w.location || '').split(',')[0].trim();
+		return loc || 'Global';
+	},
+
+	/** Colour for a war based on its primary region */
+	colorFor : function ( w ) {
+		var key = this.primaryRegion(w);
+		return this.regionColor[key] || this.regionColor['Global'];
+	},
+
+	/** Format fatalities compactly: 123 → 123, 12345 → 12.3K, 1234567 → 1.23M */
+	fmtFatalities : function ( n ) {
+		if ( n >= 1000000 ) return (n / 1000000).toFixed(n >= 10000000 ? 1 : 2) + 'M';
+		if ( n >= 1000 )    return (n / 1000).toFixed(n >= 100000 ? 0 : 1) + 'K';
+		return String(n);
+	},
+
+	/* ---------- SVG elements ---------- */
+
+	addGuide : function () {
+		this.guideLine = this.viz.append('line')
+			.attr('class', 'ch-guide')
+			.attr('y1', 80)
+			.attr('y2', 730)
+			.style('display', 'none');
+	},
+
+	addOverlay : function () {
+		var self = this;
+
+		this.viz.append('rect')
+			.attr('class', 'ch-overlay')
+			.attr('x', 0).attr('y', 0)
+			.attr('width',  1280)
+			.attr('height', 750)
+			.style('fill', 'none')
+			.style('pointer-events', 'all')
+			.on('mousemove',  function () { self.onMove( this ); })
+			.on('mouseleave', function () { self.onOut(); })
+			.on('touchmove',  function () { d3.event.preventDefault(); self.onMove( this ); })
+			.on('touchend',   function () { self.onOut(); });
+	},
+
+	/* ---------- pointer handlers ---------- */
+
+	onMove : function ( node ) {
+
+		var mouse = d3.mouse( node );
+		var xPx   = mouse[0];
+
+		if ( xPx < 75 || xPx > 1205 ) { this.onOut(); return; }
+
+		var x0   = this.xScale.invert( xPx );
+		var year = Math.round( x0 );
+
+		var dom = this.xScale.domain();
+		if ( year < Math.ceil(dom[0]) )  year = Math.ceil(dom[0]);
+		if ( year > Math.floor(dom[1]) ) year = Math.floor(dom[1]);
+
+		var snappedX = this.xScale( year );
+
+		// Move guide line
+		this.guideLine
+			.attr('x1', snappedX).attr('x2', snappedX)
+			.style('display', null);
+
+		// Skip heavy rebuild if same year
+		if ( year === this.lastYear ) {
+			this.positionTooltip();
+			return;
+		}
+		this.lastYear = year;
+
+		// ---- Collect conflicts active in this year ----
+		var visible = this.getVisibleWars();
+		var active  = [];
+		for ( var i = 0; i < visible.length; i++ ) {
+			var w = visible[i];
+			if ( w.startYear <= year && w.endYear >= year ) {
+				active.push(w);
+			}
+		}
+
+		// Sort by fatalities descending
+		active.sort(function (a, b) {
+			return (b.fatalitiesInt || 0) - (a.fatalitiesInt || 0);
+		});
+
+		// ---- Build tooltip HTML ----
+		var html = '<div class="ch-tt-year">' + year + '</div>'
+			+ '<div class="ch-tt-total">'
+			+ '<span class="ch-tt-total-label">Conflictos activos</span>'
+			+ '<span class="ch-tt-total-val">' + active.length + '</span>'
+			+ '</div>';
+
+		if ( active.length > 0 ) {
+			html += '<div class="ch-tt-list">';
+			var self = this;
+			var max = Math.min(active.length, 25); // cap for performance
+			for ( var j = 0; j < max; j++ ) {
+				var w = active[j];
+				var color = self.colorFor(w);
+				var region = self.regionLabel[ self.primaryRegion(w) ] || self.primaryRegion(w);
+				var fat = w.fatalitiesInt ? self.fmtFatalities(w.fatalitiesInt) : '—';
+
+				html += '<div class="ch-tt-row">'
+					+ '<span class="ch-tt-swatch" style="background:' + color + '"></span>'
+					+ '<span class="ch-tt-name" title="' + w.name + '">' + w.name + '</span>'
+					+ '<span class="ch-tt-val">' + fat + '</span>'
+					+ '</div>';
+			}
+			if ( active.length > max ) {
+				html += '<div class="ch-tt-more">+ ' + (active.length - max) + ' más</div>';
+			}
+			html += '</div>';
+		} else {
+			html += '<div class="ch-tt-empty">Sin conflictos este año</div>';
+		}
+
+		this.tooltip.html( html ).style('display', 'block');
+		this.positionTooltip();
+	},
+
+	positionTooltip : function () {
+		var evt   = d3.event;
+		if ( !evt ) return;
+		var pageX = ( evt.pageX !== undefined ) ? evt.pageX : ( evt.touches ? evt.touches[0].pageX : 0 );
+		var pageY = ( evt.pageY !== undefined ) ? evt.pageY : ( evt.touches ? evt.touches[0].pageY : 0 );
+
+		var ttNode = this.tooltip.node();
+		var ttW    = ttNode.offsetWidth;
+		var ttH    = ttNode.offsetHeight;
+		var winW   = window.innerWidth;
+		var winH   = window.innerHeight;
+
+		var left = pageX + 16;
+		var top  = pageY - ttH / 2;
+
+		if ( left + ttW > winW - 10 ) left = pageX - ttW - 16;
+		if ( top < 6 )                top = 6;
+		if ( top + ttH > winH - 6 )   top = winH - ttH - 6;
+
+		this.tooltip
+			.style('left', left + 'px')
+			.style('top',  top  + 'px');
+	},
+
+	onOut : function () {
+		this.guideLine.style('display', 'none');
+		this.tooltip.style('display', 'none');
+		this.lastYear = null;
+	},
+
+	/* Called when filters change — reset cached year */
+	refresh : function () {
+		this.lastYear = null;
+	}
+};
+
 
 /** Parse the csv data into a workable javascript hash **/
 PS.Graph.War = function ( options ) {

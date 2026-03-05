@@ -1219,3 +1219,127 @@ html, body {
 .yearly-count {
   color: #333;
 }
+
+/* =========================================================
+   Crosshair — vertical guide line + tooltip on #graph
+   ========================================================= */
+
+/* Invisible overlay for pointer capture */
+.ch-overlay {
+  cursor: crosshair;
+}
+
+/* Vertical guide line */
+.ch-guide {
+  stroke: rgba(255,255,255,0.35);
+  stroke-width: 1;
+  stroke-dasharray: 4,3;
+  pointer-events: none;
+  shape-rendering: crispEdges;
+}
+
+/* Shared tooltip (positioned with JS via fixed) */
+.ch-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  background: rgba(14,14,20,0.92);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 10px 14px;
+  pointer-events: none;
+  font-family: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+  min-width: 170px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.ch-tt-year {
+  color: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.ch-tt-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  padding-bottom: 5px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.ch-tt-total-label {
+  font-weight: bold;
+  color: rgba(255,255,255,0.85);
+}
+.ch-tt-total-val {
+  font-weight: bold;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.ch-tt-list {
+  max-height: 340px;
+  overflow-y: auto;
+  margin-top: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+.ch-tt-list::-webkit-scrollbar {
+  width: 4px;
+}
+.ch-tt-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+}
+.ch-tt-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 0;
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.ch-tt-row:last-child {
+  border-bottom: none;
+}
+.ch-tt-swatch {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.ch-tt-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+.ch-tt-val {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+}
+.ch-tt-more {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  padding: 4px 0 2px;
+  font-style: italic;
+}
+.ch-tt-empty {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  padding: 6px 0 2px;
+  font-style: italic;
+}
