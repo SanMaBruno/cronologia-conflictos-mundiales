@@ -1343,6 +1343,7 @@ PS.Crosshair = {
 			.style('fill', 'none')
 			.style('pointer-events', 'all')
 			.on('mousemove',  function () { self.onMove( this ); })
+			.on('click',      function () { self.onClick( this ); })
 			.on('mouseleave', function () { self.onOut(); })
 			.on('touchmove',  function () { d3.event.preventDefault(); self.onMove( this ); })
 			.on('touchend',   function () { self.onOut(); });
@@ -1426,6 +1427,25 @@ PS.Crosshair = {
 
 		this.tooltip.html( html ).style('display', 'block');
 		this.positionTooltip();
+	},
+
+	onClick : function ( node ) {
+		var evt = d3.event;
+		if ( !evt ) return;
+
+		var prevPointer = node.style.pointerEvents;
+		node.style.pointerEvents = 'none';
+
+		var underlying = document.elementFromPoint(evt.clientX, evt.clientY);
+
+		node.style.pointerEvents = prevPointer || 'all';
+
+		if ( !underlying ) return;
+
+		var $war = $(underlying).closest('.war');
+		if ( $war.length > 0 ) {
+			$war.trigger('click');
+		}
 	},
 
 	positionTooltip : function () {
