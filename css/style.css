@@ -756,6 +756,8 @@ html, body {
   fill: #000; }
 #graph .war, #clone-graph .war {
   cursor: pointer; }
+#graph .war .flower, #clone-graph .war .flower {
+  cursor: pointer; }
 #graph .stem, #clone-graph .stem {
   fill: none;
   stroke: #b0a99d;
@@ -916,18 +918,19 @@ html, body {
 .graph-overlay .block-graph-overlay .graph-overlay-content table tr.source td a {
   margin-left: 10px;
   display: block;
-  color: #9da2a5;
+  color: #1f1f1f;
   text-decoration: none; }
 .graph-overlay .block-graph-overlay .graph-overlay-content table tr.source td a:hover {
   color: #000; }
 .graph-overlay .block-graph-overlay .graph-overlay-content table tr.notes .content {
   padding-top: 3px;
   font-family: "CenturyGothic", Helvetica, Verdana, Arial, sans-serif;
-  color: #9da2a5;
+  color: #1f1f1f;
   text-align: left;
   line-height: 18px;
   max-width: 300px; }
 .graph-overlay .block-graph-overlay .graph-overlay-content .war-nav {
+  position: relative;
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
   opacity: 0;
   -moz-transform: translateY(20px);
@@ -941,9 +944,33 @@ html, body {
   margin: 0 4px;
   width: 10px;
   height: 10px;
-  background: #9ea6a9; }
+  background: #9ea6a9;
+  position: relative; }
 .graph-overlay .block-graph-overlay .graph-overlay-content .war-nav a:hover, .graph-overlay .block-graph-overlay .graph-overlay-content .war-nav a.selected {
   background: #000; }
+.graph-overlay .block-graph-overlay .graph-overlay-content .war-nav a:focus-visible {
+  outline: 1px solid #4a4a4a;
+  outline-offset: 2px;
+}
+.graph-overlay .block-graph-overlay .graph-overlay-content .war-nav a:hover::after,
+.graph-overlay .block-graph-overlay .graph-overlay-content .war-nav a:focus-visible::after {
+  content: attr(data-war-name);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: rgba(25, 25, 25, 0.92);
+  color: #f3f3f3;
+  border: 1px solid rgba(90, 90, 90, 0.9);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: "CenturyGothic", Helvetica, Verdana, Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+}
 
 .jspScrollable  {
   outline: none; }
@@ -1154,7 +1181,7 @@ html, body {
   top: 100%;
   left: 0;
   width: 320px;
-  max-height: 240px;
+  max-height: 320px;
   overflow-y: auto;
   background: #fff;
   border: 1px solid #ddd;
@@ -1162,6 +1189,15 @@ html, body {
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
   z-index: 600;
   margin-top: 4px; }
+.search-section-title {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-family: "CenturyGothic-Bold", Helvetica, Verdana, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  background: #f9f9f9;
+  border-bottom: 1px solid #eee; }
 .search-item {
   padding: 8px 12px;
   cursor: pointer;
@@ -1171,6 +1207,19 @@ html, body {
   border-bottom: none; }
 .search-item:hover {
   background: #fdf0f0; }
+.search-item.search-country {
+  display: flex;
+  align-items: center;
+  gap: 8px; }
+.search-item.search-country .search-item-flag {
+  font-size: 16px; }
+.search-item.search-country .search-item-name {
+  flex: 1;
+  font-weight: normal; }
+.search-item.search-country .search-item-count {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap; }
 .search-item-name {
   display: block;
   font-family: "CenturyGothic", Helvetica, Verdana, Arial, sans-serif;
@@ -1224,16 +1273,16 @@ html, body {
    Crosshair — vertical guide line + tooltip on #graph
    ========================================================= */
 
-/* Invisible overlay for pointer capture */
-.ch-overlay {
+/* SVG graph default cursor */
+#graph {
   cursor: crosshair;
 }
 
 /* Vertical guide line */
 .ch-guide {
-  stroke: rgba(255,255,255,0.35);
+  stroke: rgba(48,48,48,0.5);
   stroke-width: 1;
-  stroke-dasharray: 4,3;
+  stroke-dasharray: 7,6;
   pointer-events: none;
   shape-rendering: crispEdges;
 }
@@ -1254,14 +1303,37 @@ html, body {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
+.ch-tooltip.is-pinned {
+  pointer-events: auto;
+}
 
 .ch-tt-year {
   color: #fff;
   font-size: 15px;
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   padding-bottom: 5px;
   border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.ch-tt-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+.ch-tt-pin {
+  appearance: none;
+  border: 1px solid rgba(220,220,220,0.45);
+  background: rgba(255,255,255,0.08);
+  color: #f2f2f2;
+  font-family: "CenturyGothic", Helvetica, Verdana, Arial, sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.ch-tt-pin:hover {
+  background: rgba(255,255,255,0.16);
 }
 .ch-tt-total {
   display: flex;
@@ -1300,10 +1372,20 @@ html, body {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 3px 0;
+  padding: 4px 6px;
+  margin: 0 -6px;
   font-size: 11px;
   color: rgba(255,255,255,0.85);
   border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: background 0.15s ease, outline 0.15s ease;
+  border-radius: 4px;
+}
+.ch-tt-row:hover,
+.ch-tt-row-highlight {
+  background: rgba(255,255,255,0.15);
+  outline: 2px solid rgba(255,255,255,0.5);
+  outline-offset: -2px;
 }
 .ch-tt-row:last-child {
   border-bottom: none;
@@ -1342,4 +1424,12 @@ html, body {
   text-align: center;
   padding: 6px 0 2px;
   font-style: italic;
+}
+.ch-tt-hint {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 10px;
+  line-height: 1.3;
+  color: rgba(255,255,255,0.62);
 }

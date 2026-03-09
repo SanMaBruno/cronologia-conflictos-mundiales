@@ -281,45 +281,75 @@ PS.Graph = {
 
 	addEventsFlowers : function() {
 
-		$(".war").on("mouseover", function(){
+		var self = this;
+
+		// Usar mouseenter/mouseleave para evitar múltiples disparos
+		$(".war").on("mouseenter", function(){
 
 			var 
 				$this = $(this),
-				$text = $('.over-title[data-index="' + $this.data("index") + '"]');
+				currentIndex = $this.data("index"),
+				$text = $('.over-title[data-index="' + currentIndex + '"]');
 
-			// d3.select(this).moveToFront();
 			d3.select($text[0]).moveToFront();
 
-			$this.attr("filter", "url(#outline)");
-			$text.animate({ "opacity" : 1 }, 350);
+			// Aplicar filtro de contorno a la flor
+			$this.find('.flower').attr("filter", "url(#outline)");
+			$text.stop(true).animate({ "opacity" : 1 }, 200);
+			
+			// Obtener los datos de la guerra para este índice
+			var warData = self.data[currentIndex];
+			
+			// Si la guerra no está en el tooltip actual, actualizar el tooltip al año de la guerra
+			var $row = $('.ch-tt-row[data-index="' + currentIndex + '"]');
+			if ($row.length === 0 && warData && PS.Crosshair) {
+				// Actualizar tooltip al endYear de esta guerra con el ítem resaltado
+				PS.Crosshair.lastYear = warData.endYear;
+				PS.Crosshair.buildTooltipForYear(warData.endYear, currentIndex);
+			} else if ($row.length > 0) {
+				// Resaltar la fila correspondiente en el tooltip
+				$row.addClass('ch-tt-row-highlight');
+				
+				// Scroll automático a la fila resaltada en el tooltip
+				var $list = $row.closest('.ch-tt-list');
+				if ($list.length > 0) {
+					var rowTop = $row.position().top;
+					var listScrollTop = $list.scrollTop();
+					var listHeight = $list.height();
+					var rowHeight = $row.outerHeight();
+					
+					// Si la fila no está visible, hacer scroll
+					if (rowTop < 0 || rowTop + rowHeight > listHeight) {
+						$list.animate({
+							scrollTop: listScrollTop + rowTop - (listHeight / 2) + (rowHeight / 2)
+						}, 150);
+					}
+				}
+			}
 		});
 
-		$(".war").on("mouseout", function(){
+		$(".war").on("mouseleave", function(){
 			
 			var 
 				$this = $(this),
 				currentIndex = $this.data("index"),
 				$text = $('.over-title[data-index="' + currentIndex + '"]');
 
-				// $prev = $(".war[data-index='"+(currentIndex-1)+"']")[0],
-				// $next = $(".war[data-index='"+(currentIndex+1)+"']")[0];
-
-			/*
-			if ( $next )
-				this.parentNode.insertBefore( this, $next );
-			else 
-				this.parentNode.insertBefore( $prev, this.nextSibling );
-			*/
-				
-
 			d3.select($text[0]).moveToBack();
 
-			$this.attr("filter", "");
-			$text.animate({ "opacity" : 0 }, 100);
+			// Quitar filtro de contorno
+			$this.find('.flower').attr("filter", "");
+			$text.stop(true).animate({ "opacity" : 0 }, 100);
+			
+			// Quitar resaltado de la fila del tooltip
+			$('.ch-tt-row[data-index="' + currentIndex + '"]').removeClass('ch-tt-row-highlight');
 		});
 
-		var self = this;
-		$(".war").on("click", function(){
+		$(".war").on("click", function(e){
+			e.stopPropagation();  // Evitar que el click se propague al SVG
+
+			// Quitar el contorno al hacer click
+			$(this).find('.flower').attr("filter", "");
 
 			if ( ga ) {
 				ga('send', 'event', {
@@ -643,12 +673,21 @@ PS.Graph = {
 			this.searchShow = this.originalDataSet.slice(0);
 		} else {
 			var q = query.toLowerCase();
+			var expandedQueries = PS.Filter.Search.expandSearchQuery ? PS.Filter.Search.expandSearchQuery(q) : [q];
 			this.originalDataSet.forEach( function(d) {
 				var name = (d.name || '').toLowerCase();
 				var countries = (d.countries || '').toLowerCase();
 				var location = (d.location || '').toLowerCase();
 				var notes = (d.notes || '').toLowerCase();
-				if ( name.indexOf(q) > -1 || countries.indexOf(q) > -1 || location.indexOf(q) > -1 || notes.indexOf(q) > -1 ) {
+				var match = false;
+				for (var i = 0; i < expandedQueries.length; i++) {
+					var searchTerm = expandedQueries[i];
+					if ( name.indexOf(searchTerm) > -1 || countries.indexOf(searchTerm) > -1 || location.indexOf(searchTerm) > -1 || notes.indexOf(searchTerm) > -1 ) {
+						match = true;
+						break;
+					}
+				}
+				if (match) {
 					self.searchShow.push(d);
 				} else {
 					self.searchHide.push(d);
@@ -1006,7 +1045,10 @@ PS.Graph.Overlay = {
 
 		$.each(adjacentWars, function(i, war) {
 
-			var $a = $("<a href='#' data-index='" + war.index + "' />");
+			var $a = $("<a href='#' data-index='" + war.index + "' />")
+				.attr("title", war.name)
+				.attr("aria-label", "Seleccionar conflicto: " + war.name)
+				.attr("data-war-name", war.name);
 			if ( war == warData ) $a.addClass("selected");
 
 			$warNav.append( $a );
@@ -1269,6 +1311,10 @@ PS.Crosshair = {
 	guideLine : null,
 	tooltip   : null,
 	lastYear  : null,
+	hideTimer : null,
+	hoveringTooltip : false,
+	isPinned : false,
+	isOverFlower : false,
 
 	/* ---------- public ---------- */
 
@@ -1283,6 +1329,79 @@ PS.Crosshair = {
 		this.addOverlay();
 
 		this.tooltip = d3.select('.ch-tooltip');
+		this.bindTooltipEvents();
+		this.tooltip.style('pointer-events', 'none');
+
+		$(window).on('keyup.chCrosshair', function (e) {
+			if ( e.keyCode === 27 && self.isPinned ) {
+				self.unpinTooltip();
+			}
+		});
+	},
+
+	bindTooltipEvents : function () {
+		var self = this;
+
+		$('.ch-tooltip')
+			.on('mouseenter', function () {
+				self.hoveringTooltip = true;
+				if ( self.hideTimer ) {
+					clearTimeout(self.hideTimer);
+					self.hideTimer = null;
+				}
+			})
+			.on('mouseleave', function () {
+				self.hoveringTooltip = false;
+				self.onOut();
+			})
+			.on('click', '.ch-tt-pin', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				if ( self.isPinned ) {
+					self.unpinTooltip();
+				}
+			})
+			.on('mouseenter', '.ch-tt-row', function () {
+				// Aplicar contorno a la flor correspondiente
+				var idx = $(this).attr('data-index');
+				$('.war[data-index="' + idx + '"] .flower').attr('filter', 'url(#outline)');
+			})
+			.on('mouseleave', '.ch-tt-row', function () {
+				// Quitar contorno de la flor
+				var idx = $(this).attr('data-index');
+				$('.war[data-index="' + idx + '"] .flower').attr('filter', '');
+			})
+			.on('click', '.ch-tt-row', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				var idx = parseInt($(this).attr('data-index'), 10);
+				if ( isNaN(idx) ) return;
+
+				// Quitar contorno antes de mostrar overlay
+				$('.war[data-index="' + idx + '"] .flower').attr('filter', '');
+
+				self.tooltip.style('display', 'none');
+				self.guideLine.style('display', 'none');
+				self.lastYear = null;
+				self.unpinTooltip();
+
+				PS.EM.trigger(PS.Event.SHOW_OVERLAY, [ self.wars, idx ]);
+			});
+	},
+
+	pinTooltip : function () {
+		this.isPinned = true;
+		this.tooltip.classed('is-pinned', true).style('pointer-events', 'auto');
+		this.tooltip.select('.ch-tt-pin').text('Desfijar');
+		this.tooltip.select('.ch-tt-hint').text('Año fijado. Haz clic en un conflicto para ver detalles.');
+	},
+
+	unpinTooltip : function () {
+		this.isPinned = false;
+		this.tooltip.classed('is-pinned', false).style('pointer-events', 'none');
+		this.tooltip.select('.ch-tt-hint').text('Haz clic en el grafico para fijar este ano y seleccionar con calma.');
 	},
 
 	/* ---------- helpers ---------- */
@@ -1335,28 +1454,44 @@ PS.Crosshair = {
 	addOverlay : function () {
 		var self = this;
 
-		this.viz.append('rect')
-			.attr('class', 'ch-overlay')
-			.attr('x', 0).attr('y', 0)
-			.attr('width',  1280)
-			.attr('height', 750)
-			.style('fill', 'none')
-			.style('pointer-events', 'all')
+		// Escuchar eventos directamente en el SVG (no en un overlay invisible)
+		this.viz
 			.on('mousemove',  function () { self.onMove( this ); })
 			.on('click',      function () { self.onClick( this ); })
 			.on('mouseleave', function () { self.onOut(); })
 			.on('touchmove',  function () { d3.event.preventDefault(); self.onMove( this ); })
 			.on('touchend',   function () { self.onOut(); });
+		
+		// Escuchar cuando el mouse entra/sale de las flores para desactivar el crosshair
+		var $graph = $('#graph');
+		$graph.on('mouseenter', '.war', function() {
+			self.isOverFlower = true;
+			// Ocultar guía cuando estamos sobre una flor
+			if (self.guideLine) {
+				self.guideLine.style('display', 'none');
+			}
+		});
+		$graph.on('mouseleave', '.war', function() {
+			self.isOverFlower = false;
+		});
 	},
 
 	/* ---------- pointer handlers ---------- */
 
 	onMove : function ( node ) {
 
+		if ( this.isPinned ) return;
+		if ( this.isOverFlower ) return;  // No procesar si estamos sobre una flor
+
 		var mouse = d3.mouse( node );
 		var xPx   = mouse[0];
 
 		if ( xPx < 75 || xPx > 1205 ) { this.onOut(); return; }
+
+		if ( this.hideTimer ) {
+			clearTimeout(this.hideTimer);
+			this.hideTimer = null;
+		}
 
 		var x0   = this.xScale.invert( xPx );
 		var year = Math.round( x0 );
@@ -1379,6 +1514,12 @@ PS.Crosshair = {
 		}
 		this.lastYear = year;
 
+		this.buildTooltipForYear(year);
+	},
+
+	/** Build and display tooltip for a specific year */
+	buildTooltipForYear : function ( year, highlightIndex ) {
+
 		// ---- Collect conflicts active in this year ----
 		var visible = this.getVisibleWars();
 		var active  = [];
@@ -1396,6 +1537,9 @@ PS.Crosshair = {
 
 		// ---- Build tooltip HTML ----
 		var html = '<div class="ch-tt-year">' + year + '</div>'
+			+ '<div class="ch-tt-actions">'
+			+ (this.isPinned ? '<button type="button" class="ch-tt-pin" aria-label="Desfijar año">Desfijar</button>' : '')
+			+ '</div>'
 			+ '<div class="ch-tt-total">'
 			+ '<span class="ch-tt-total-label">Conflictos activos</span>'
 			+ '<span class="ch-tt-total-val">' + active.length + '</span>'
@@ -1410,8 +1554,9 @@ PS.Crosshair = {
 				var color = self.colorFor(w);
 				var region = self.regionLabel[ self.primaryRegion(w) ] || self.primaryRegion(w);
 				var fat = w.fatalitiesInt ? self.fmtFatalities(w.fatalitiesInt) : '—';
+				var isHighlighted = (highlightIndex !== undefined && w.index == highlightIndex);
 
-				html += '<div class="ch-tt-row">'
+				html += '<div class="ch-tt-row' + (isHighlighted ? ' ch-tt-row-highlight' : '') + '" data-index="' + w.index + '" title="Abrir: ' + w.name + '">'
 					+ '<span class="ch-tt-swatch" style="background:' + color + '"></span>'
 					+ '<span class="ch-tt-name" title="' + w.name + '">' + w.name + '</span>'
 					+ '<span class="ch-tt-val">' + fat + '</span>'
@@ -1425,26 +1570,43 @@ PS.Crosshair = {
 			html += '<div class="ch-tt-empty">Sin conflictos este año</div>';
 		}
 
+		html += '<div class="ch-tt-hint">Haz clic en el grafico para fijar este ano y seleccionar con calma.</div>';
+
 		this.tooltip.html( html ).style('display', 'block');
 		this.positionTooltip();
+		
+		// Scroll to highlighted row if needed
+		if (highlightIndex !== undefined) {
+			var $row = $('.ch-tt-row[data-index="' + highlightIndex + '"]');
+			if ($row.length > 0) {
+				var $list = $row.closest('.ch-tt-list');
+				if ($list.length > 0) {
+					var rowTop = $row.position().top;
+					var listHeight = $list.height();
+					var rowHeight = $row.outerHeight();
+					if (rowTop < 0 || rowTop + rowHeight > listHeight) {
+						$list.scrollTop($list.scrollTop() + rowTop - (listHeight / 2) + (rowHeight / 2));
+					}
+				}
+			}
+		}
 	},
 
 	onClick : function ( node ) {
 		var evt = d3.event;
 		if ( !evt ) return;
+		
+		// Si estamos sobre una flor, no procesar el click (las flores tienen su propio handler)
+		if ( this.isOverFlower ) return;
 
-		var prevPointer = node.style.pointerEvents;
-		node.style.pointerEvents = 'none';
+		if ( this.isPinned ) {
+			this.unpinTooltip();
+			return;
+		}
 
-		var underlying = document.elementFromPoint(evt.clientX, evt.clientY);
-
-		node.style.pointerEvents = prevPointer || 'all';
-
-		if ( !underlying ) return;
-
-		var $war = $(underlying).closest('.war');
-		if ( $war.length > 0 ) {
-			$war.trigger('click');
+		if ( this.lastYear !== null ) {
+			this.pinTooltip();
+			return;
 		}
 	},
 
@@ -1473,13 +1635,30 @@ PS.Crosshair = {
 	},
 
 	onOut : function () {
-		this.guideLine.style('display', 'none');
-		this.tooltip.style('display', 'none');
-		this.lastYear = null;
+		var self = this;
+
+		if ( this.isPinned ) return;
+
+		if ( this.hideTimer ) {
+			clearTimeout(this.hideTimer);
+		}
+
+		this.hideTimer = setTimeout(function () {
+			if ( self.hoveringTooltip ) return;
+			self.guideLine.style('display', 'none');
+			self.tooltip.style('display', 'none');
+			self.lastYear = null;
+			self.hideTimer = null;
+		}, 120);
 	},
 
 	/* Called when filters change — reset cached year */
 	refresh : function () {
+		if ( this.isPinned ) {
+			this.unpinTooltip();
+			this.tooltip.style('display', 'none');
+			this.guideLine.style('display', 'none');
+		}
 		this.lastYear = null;
 	}
 };
@@ -1695,6 +1874,95 @@ PS.Filter.Region = PS.Filter.Region || {
 
 PS.Filter.Search = PS.Filter.Search || {
 
+	// Mapeo de países inglés ↔ español para búsquedas
+	countryTranslations : {
+		'ukraine': 'ucrania', 'ucrania': 'ukraine',
+		'russia': 'rusia', 'rusia': 'russia',
+		'syria': 'siria', 'siria': 'syria',
+		'mexico': 'méxico', 'méxico': 'mexico',
+		'ethiopia': 'etiopía', 'etiopía': 'ethiopia',
+		'yemen': 'yemen',
+		'iraq': 'irak', 'irak': 'iraq',
+		'afghanistan': 'afganistán', 'afganistán': 'afghanistan',
+		'nigeria': 'nigeria',
+		'sudan': 'sudán', 'sudán': 'sudan',
+		'south sudan': 'sudán del sur', 'sudán del sur': 'south sudan',
+		'somalia': 'somalia',
+		'democratic republic of the congo': 'república democrática del congo', 'república democrática del congo': 'democratic republic of the congo',
+		'drc': 'rdc', 'rdc': 'drc',
+		'colombia': 'colombia',
+		'myanmar': 'birmania', 'birmania': 'myanmar', 'burma': 'birmania',
+		'pakistan': 'pakistán', 'pakistán': 'pakistan',
+		'india': 'india',
+		'israel': 'israel',
+		'palestine': 'palestina', 'palestina': 'palestine',
+		'turkey': 'turquía', 'turquía': 'turkey',
+		'egypt': 'egipto', 'egipto': 'egypt',
+		'libya': 'libia', 'libia': 'libya',
+		'algeria': 'argelia', 'argelia': 'algeria',
+		'morocco': 'marruecos', 'marruecos': 'morocco',
+		'mali': 'malí', 'malí': 'mali',
+		'niger': 'níger', 'níger': 'niger',
+		'chad': 'chad',
+		'cameroon': 'camerún', 'camerún': 'cameroon',
+		'central african republic': 'república centroafricana', 'república centroafricana': 'central african republic',
+		'south africa': 'sudáfrica', 'sudáfrica': 'south africa',
+		'mozambique': 'mozambique',
+		'angola': 'angola',
+		'zimbabwe': 'zimbabue', 'zimbabue': 'zimbabwe',
+		'rwanda': 'ruanda', 'ruanda': 'rwanda',
+		'burundi': 'burundi',
+		'uganda': 'uganda',
+		'kenya': 'kenia', 'kenia': 'kenya',
+		'tanzania': 'tanzania',
+		'eritrea': 'eritrea',
+		'lebanon': 'líbano', 'líbano': 'lebanon',
+		'jordan': 'jordania', 'jordania': 'jordan',
+		'saudi arabia': 'arabia saudita', 'arabia saudita': 'saudi arabia',
+		'iran': 'irán', 'irán': 'iran',
+		'china': 'china',
+		'japan': 'japón', 'japón': 'japan',
+		'philippines': 'filipinas', 'filipinas': 'philippines',
+		'indonesia': 'indonesia',
+		'thailand': 'tailandia', 'tailandia': 'thailand',
+		'vietnam': 'vietnam',
+		'north korea': 'corea del norte', 'corea del norte': 'north korea',
+		'south korea': 'corea del sur', 'corea del sur': 'south korea',
+		'united states': 'estados unidos', 'estados unidos': 'united states', 'usa': 'estados unidos', 'eeuu': 'united states',
+		'united kingdom': 'reino unido', 'reino unido': 'united kingdom', 'uk': 'reino unido',
+		'france': 'francia', 'francia': 'france',
+		'germany': 'alemania', 'alemania': 'germany',
+		'spain': 'españa', 'españa': 'spain',
+		'italy': 'italia', 'italia': 'italy',
+		'poland': 'polonia', 'polonia': 'poland',
+		'greece': 'grecia', 'grecia': 'greece',
+		'serbia': 'serbia',
+		'croatia': 'croacia', 'croacia': 'croatia',
+		'bosnia': 'bosnia',
+		'kosovo': 'kosovo',
+		'georgia': 'georgia',
+		'armenia': 'armenia',
+		'azerbaijan': 'azerbaiyán', 'azerbaiyán': 'azerbaijan',
+		'tajikistan': 'tayikistán', 'tayikistán': 'tajikistan',
+		'sri lanka': 'sri lanka',
+		'nepal': 'nepal',
+		'bangladesh': 'bangladés', 'bangladés': 'bangladesh',
+		'peru': 'perú', 'perú': 'peru',
+		'brazil': 'brasil', 'brasil': 'brazil',
+		'argentina': 'argentina',
+		'chile': 'chile',
+		'venezuela': 'venezuela',
+		'ecuador': 'ecuador',
+		'bolivia': 'bolivia',
+		'haiti': 'haití', 'haití': 'haiti',
+		'cuba': 'cuba',
+		'guatemala': 'guatemala',
+		'el salvador': 'el salvador',
+		'honduras': 'honduras',
+		'nicaragua': 'nicaragua',
+		'burkina faso': 'burkina faso'
+	},
+
 	init : function( data ) {
 
 		this.data = data;
@@ -1713,6 +1981,27 @@ PS.Filter.Search = PS.Filter.Search || {
 				this.$results.hide();
 			}
 		}, this));
+	},
+
+	// Expandir búsqueda con traducciones
+	expandSearchQuery : function(query) {
+		var q = query.toLowerCase();
+		var queries = [q];
+		
+		// Agregar traducción si existe
+		if (this.countryTranslations[q]) {
+			queries.push(this.countryTranslations[q]);
+		}
+		
+		// Buscar coincidencias parciales en las traducciones
+		for (var key in this.countryTranslations) {
+			if (key.indexOf(q) > -1 || this.countryTranslations[key].indexOf(q) > -1) {
+				if (queries.indexOf(key) === -1) queries.push(key);
+				if (queries.indexOf(this.countryTranslations[key]) === -1) queries.push(this.countryTranslations[key]);
+			}
+		}
+		
+		return queries;
 	},
 
 	onInput : function(e) {
@@ -1737,6 +2026,9 @@ PS.Filter.Search = PS.Filter.Search || {
 		var query = this.$input.val().trim();
 		if ( query.length > 0 ) {
 			this.showSuggestions(query);
+		} else {
+			// Mostrar países populares cuando el campo está vacío
+			this.showPopularCountries();
 		}
 	},
 
@@ -1745,6 +2037,54 @@ PS.Filter.Search = PS.Filter.Search || {
 		this.$clear.hide();
 		this.$results.hide();
 		PS.EM.trigger(PS.Event.SEARCH_FILTERED, [ "" ]);
+	},
+
+	showPopularCountries : function() {
+		var countryCounts = {};
+		
+		// Contar conflictos por país
+		for (var i = 0; i < this.data.length; i++) {
+			var d = this.data[i];
+			var countries = (d.countries || '').split(',');
+			for (var j = 0; j < countries.length; j++) {
+				var c = countries[j].trim();
+				if (c) {
+					countryCounts[c] = (countryCounts[c] || 0) + 1;
+				}
+			}
+		}
+		
+		// Convertir a array y ordenar por cantidad
+		var sorted = [];
+		for (var country in countryCounts) {
+			sorted.push({ name: country, count: countryCounts[country] });
+		}
+		sorted.sort(function(a, b) { return b.count - a.count; });
+		sorted = sorted.slice(0, 15);
+		
+		this.$results.empty();
+		this.$results.append('<div class="search-section-title">Países con más conflictos</div>');
+		
+		var self = this;
+		for (var k = 0; k < sorted.length; k++) {
+			var item = sorted[k];
+			var $item = $('<div class="search-item search-country">' +
+				'<span class="search-item-flag">🌍</span>' +
+				'<span class="search-item-name">' + item.name + '</span>' +
+				'<span class="search-item-count">' + item.count + ' conflictos</span>' +
+			'</div>');
+			$item.data('country', item.name);
+			$item.on('click', function() {
+				var country = $(this).data('country');
+				self.$input.val(country);
+				self.$clear.show();
+				self.$results.hide();
+				PS.EM.trigger(PS.Event.SEARCH_FILTERED, [ country ]);
+			});
+			this.$results.append($item);
+		}
+		
+		this.$results.show();
 	},
 
 	doSearch : function(query) {
@@ -1758,7 +2098,10 @@ PS.Filter.Search = PS.Filter.Search || {
 
 	showSuggestions : function(query) {
 		var q = query.toLowerCase();
-		var matches = [];
+		var expandedQueries = this.expandSearchQuery(q);
+		var matchesByName = [];
+		var matchesByCountry = [];
+		var matchingCountries = {};
 
 		for (var i = 0; i < this.data.length; i++) {
 			var d = this.data[i];
@@ -1766,24 +2109,80 @@ PS.Filter.Search = PS.Filter.Search || {
 			var countries = (d.countries || '').toLowerCase();
 			var location = (d.location || '').toLowerCase();
 			var notes = (d.notes || '').toLowerCase();
-			if ( name.indexOf(q) > -1 || countries.indexOf(q) > -1 || location.indexOf(q) > -1 || notes.indexOf(q) > -1 ) {
-				matches.push(d);
+			
+			var nameMatch = false;
+			var countryMatch = false;
+			
+			// Buscar con todas las variantes de la consulta
+			for (var qi = 0; qi < expandedQueries.length; qi++) {
+				var searchTerm = expandedQueries[qi];
+				if (name.indexOf(searchTerm) > -1 || notes.indexOf(searchTerm) > -1) {
+					nameMatch = true;
+				}
+				if (countries.indexOf(searchTerm) > -1 || location.indexOf(searchTerm) > -1) {
+					countryMatch = true;
+				}
+			}
+			
+			if ( nameMatch ) {
+				matchesByName.push(d);
+			} else if ( countryMatch ) {
+				matchesByCountry.push(d);
+				// Extraer los países que coinciden
+				var countryList = (d.countries || '').split(',');
+				for (var k = 0; k < countryList.length; k++) {
+					var c = countryList[k].trim();
+					var cLower = c.toLowerCase();
+					for (var qj = 0; qj < expandedQueries.length; qj++) {
+						if (cLower.indexOf(expandedQueries[qj]) > -1) {
+							matchingCountries[c] = (matchingCountries[c] || 0) + 1;
+							break;
+						}
+					}
+				}
 			}
 		}
 
 		// Sort by fatalities descending
-		matches.sort(function(a, b) { return (b.fatalitiesInt || 0) - (a.fatalitiesInt || 0); });
-		matches = matches.slice(0, 12);
+		matchesByName.sort(function(a, b) { return (b.fatalitiesInt || 0) - (a.fatalitiesInt || 0); });
+		matchesByCountry.sort(function(a, b) { return (b.fatalitiesInt || 0) - (a.fatalitiesInt || 0); });
+		
+		matchesByName = matchesByName.slice(0, 8);
+		matchesByCountry = matchesByCountry.slice(0, 8);
 
 		this.$results.empty();
+		var self = this;
+		var locTranslations = {'Africa': 'África', 'Asia': 'Asia', 'Europe': 'Europa', 'North America': 'Norteamérica', 'South America': 'Sudamérica'};
 
-		if (matches.length === 0) {
-			this.$results.append('<div class="search-item search-empty">Sin resultados</div>');
-		} else {
-			var self = this;
-			var locTranslations = {'Africa': 'África', 'Asia': 'Asia', 'Europe': 'Europa', 'North America': 'Norteamérica', 'South America': 'Sudamérica'};
-			for (var j = 0; j < matches.length; j++) {
-				var m = matches[j];
+		// Mostrar países que coinciden primero
+		var countryKeys = Object.keys(matchingCountries);
+		if (countryKeys.length > 0) {
+			this.$results.append('<div class="search-section-title">Países</div>');
+			countryKeys = countryKeys.slice(0, 5);
+			for (var ci = 0; ci < countryKeys.length; ci++) {
+				var countryName = countryKeys[ci];
+				var $countryItem = $('<div class="search-item search-country">' +
+					'<span class="search-item-flag">🌍</span>' +
+					'<span class="search-item-name">' + countryName + '</span>' +
+					'<span class="search-item-count">' + matchingCountries[countryName] + ' conflictos</span>' +
+				'</div>');
+				$countryItem.data('country', countryName);
+				$countryItem.on('click', function() {
+					var country = $(this).data('country');
+					self.$input.val(country);
+					self.$clear.show();
+					self.$results.hide();
+					PS.EM.trigger(PS.Event.SEARCH_FILTERED, [ country ]);
+				});
+				this.$results.append($countryItem);
+			}
+		}
+
+		// Mostrar conflictos que coinciden por nombre
+		if (matchesByName.length > 0) {
+			this.$results.append('<div class="search-section-title">Conflictos</div>');
+			for (var j = 0; j < matchesByName.length; j++) {
+				var m = matchesByName[j];
 				var fat = m.fatalities || '';
 				var years = m.startYear + (m.endYear !== m.startYear ? '-' + m.endYear : '');
 				var locDisplay = locTranslations[m.location] || m.location;
@@ -1801,6 +2200,34 @@ PS.Filter.Search = PS.Filter.Search || {
 				});
 				this.$results.append($item);
 			}
+		}
+
+		// Mostrar conflictos que solo coinciden por país
+		if (matchesByCountry.length > 0 && matchesByName.length === 0) {
+			this.$results.append('<div class="search-section-title">Conflictos en ese país</div>');
+			for (var jc = 0; jc < matchesByCountry.length; jc++) {
+				var mc = matchesByCountry[jc];
+				var fatC = mc.fatalities || '';
+				var yearsC = mc.startYear + (mc.endYear !== mc.startYear ? '-' + mc.endYear : '');
+				var locDisplayC = locTranslations[mc.location] || mc.location;
+				var $itemC = $('<div class="search-item">' +
+					'<span class="search-item-name">' + mc.name + '</span>' +
+					'<span class="search-item-meta">' + yearsC + ' &middot; ' + fatC + ' muertes &middot; ' + locDisplayC + '</span>' +
+				'</div>');
+				$itemC.data('warName', mc.name);
+				$itemC.on('click', function() {
+					var warName = $(this).data('warName');
+					self.$input.val(warName);
+					self.$clear.show();
+					self.$results.hide();
+					PS.EM.trigger(PS.Event.SEARCH_FILTERED, [ warName ]);
+				});
+				this.$results.append($itemC);
+			}
+		}
+
+		if (matchesByName.length === 0 && matchesByCountry.length === 0 && countryKeys.length === 0) {
+			this.$results.append('<div class="search-item search-empty">Sin resultados</div>');
 		}
 
 		this.$results.show();
