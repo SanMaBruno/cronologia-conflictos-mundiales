@@ -2,6 +2,63 @@
 // Create Namespace
 var PS = window.PS || {};
 
+// ============================================
+// Performance Utilities
+// ============================================
+
+// Throttle function - limits execution to once per wait period
+PS.throttle = function(func, wait) {
+	var timeout = null;
+	var previous = 0;
+	return function() {
+		var now = Date.now();
+		var remaining = wait - (now - previous);
+		var context = this;
+		var args = arguments;
+		if (remaining <= 0 || remaining > wait) {
+			if (timeout) {
+				clearTimeout(timeout);
+				timeout = null;
+			}
+			previous = now;
+			func.apply(context, args);
+		} else if (!timeout) {
+			timeout = setTimeout(function() {
+				previous = Date.now();
+				timeout = null;
+				func.apply(context, args);
+			}, remaining);
+		}
+	};
+};
+
+// Debounce function - delays execution until after wait period of inactivity
+PS.debounce = function(func, wait, immediate) {
+	var timeout;
+	return function() {
+		var context = this;
+		var args = arguments;
+		var later = function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		};
+		var callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) func.apply(context, args);
+	};
+};
+
+// RequestAnimationFrame wrapper for smooth animations
+PS.raf = function(callback) {
+	return (window.requestAnimationFrame || 
+			window.webkitRequestAnimationFrame || 
+			window.mozRequestAnimationFrame || 
+			function(cb) { return setTimeout(cb, 16); })(callback);
+};
+
+// ============================================
+
 // Event Manager
 PS.EM = PS.EM || $({});
 
@@ -38,6 +95,13 @@ PS.Colors = {
 };
 
 $(window).ready(function() {
+
+	// Ocultar loader de página
+	var loader = document.getElementById('pageLoader');
+	if (loader) {
+		loader.classList.add('hidden');
+		setTimeout(function() { loader.remove(); }, 500);
+	}
 
 	if ( window.GRAPH_ONLY ) {
 
@@ -192,7 +256,7 @@ PS.Graph = {
 
 		this.drawAxis();
 
-		this.drawLabels( wars );
+		// drawLabels eliminado - los títulos ahora solo aparecen en el tooltip
 		this.drawGroupFlower( wars );
 		this.drawStem();
 		this.drawFlower();
@@ -288,14 +352,10 @@ PS.Graph = {
 
 			var 
 				$this = $(this),
-				currentIndex = $this.data("index"),
-				$text = $('.over-title[data-index="' + currentIndex + '"]');
-
-			d3.select($text[0]).moveToFront();
+				currentIndex = $this.data("index");
 
 			// Aplicar filtro de contorno a la flor
 			$this.find('.flower').attr("filter", "url(#outline)");
-			$text.stop(true).animate({ "opacity" : 1 }, 200);
 			
 			// Obtener los datos de la guerra para este índice
 			var warData = self.data[currentIndex];
@@ -332,14 +392,10 @@ PS.Graph = {
 			
 			var 
 				$this = $(this),
-				currentIndex = $this.data("index"),
-				$text = $('.over-title[data-index="' + currentIndex + '"]');
-
-			d3.select($text[0]).moveToBack();
+				currentIndex = $this.data("index");
 
 			// Quitar filtro de contorno
 			$this.find('.flower').attr("filter", "");
-			$text.stop(true).animate({ "opacity" : 0 }, 100);
 			
 			// Quitar resaltado de la fila del tooltip
 			$('.ch-tt-row[data-index="' + currentIndex + '"]').removeClass('ch-tt-row-highlight');
@@ -1454,12 +1510,15 @@ PS.Crosshair = {
 	addOverlay : function () {
 		var self = this;
 
+		// Throttled mousemove para mejor rendimiento (16ms ≈ 60fps)
+		var throttledMove = PS.throttle(function(node) { self.onMove(node); }, 16);
+
 		// Escuchar eventos directamente en el SVG (no en un overlay invisible)
 		this.viz
-			.on('mousemove',  function () { self.onMove( this ); })
+			.on('mousemove',  function () { throttledMove( this ); })
 			.on('click',      function () { self.onClick( this ); })
 			.on('mouseleave', function () { self.onOut(); })
-			.on('touchmove',  function () { d3.event.preventDefault(); self.onMove( this ); })
+			.on('touchmove',  function () { d3.event.preventDefault(); throttledMove( this ); })
 			.on('touchend',   function () { self.onOut(); });
 		
 		// Escuchar cuando el mouse entra/sale de las flores para desactivar el crosshair

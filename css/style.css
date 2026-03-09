@@ -38,12 +38,14 @@ article, aside, details, figcaption, figure, footer, header, hgroup, main, menu,
   font-family: 'ACaslonPro-Bold';
   src: url("fonts/ACaslonPro-Bold.eot%3F") format("embedded-opentype"), url("fonts/ACaslonPro-Bold.woff") format("woff"), url("fonts/ACaslonPro-Bold.ttf") format("truetype"), url("fonts/ACaslonPro-Bold.svg") format("svg");
   font-weight: normal;
-  font-style: normal; }
+  font-style: normal;
+  font-display: swap; }
 @font-face {
   font-family: 'CenturyGothic';
   src: url("fonts/CenturyGothic.eot%3F") format("embedded-opentype"), url("fonts/CenturyGothic.woff") format("woff"), url("fonts/CenturyGothic.ttf") format("truetype"), url("fonts/CenturyGothic.svg") format("svg");
   font-weight: normal;
-  font-style: normal; }
+  font-style: normal;
+  font-display: swap; }
 @font-face {
   font-family: 'CenturyGothic-Bold';
   src: url("fonts/CenturyGothic-Bold.eot%3F") format("embedded-opentype"), url("fonts/CenturyGothic-Bold.woff") format("woff"), url("fonts/CenturyGothic-Bold.ttf") format("truetype"), url("fonts/CenturyGothic-Bold.svg") format("svg");
@@ -715,13 +717,12 @@ html, body {
   width: 100%;
   height: 100%;
   z-index: 1;
-  background: url(../img/skin/bg-graph-blue.jpg) no-repeat center center;
-  background-size: cover;
+  background: #f5f0e6;
   filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
   opacity: 0; }
 
 .bg-graph-2 {
-  background-image: url(../img/skin/bg-graph.jpg); }
+  background: #f5f0e6; }
 
 #graph, #clone-graph {
   display: block;
@@ -735,7 +736,10 @@ html, body {
   -ms-transform: translate(-50%, -50%);
   -o-transform: translate(-50%, -50%);
   -webkit-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%); }
+  transform: translate(-50%, -50%);
+  /* Performance optimizations */
+  contain: layout style;
+  will-change: opacity; }
 #graph .icon, #clone-graph .icon {
   cursor: pointer; }
 #graph .links, #clone-graph .links {
@@ -755,9 +759,14 @@ html, body {
 #graph .btn-selected .btn-text, #clone-graph .btn-selected .btn-text {
   fill: #000; }
 #graph .war, #clone-graph .war {
-  cursor: pointer; }
+  cursor: pointer;
+  /* GPU acceleration para las flores */
+  transform: translateZ(0);
+  backface-visibility: hidden; }
 #graph .war .flower, #clone-graph .war .flower {
-  cursor: pointer; }
+  cursor: pointer;
+  transform-origin: center center;
+  will-change: filter; }
 #graph .stem, #clone-graph .stem {
   fill: none;
   stroke: #b0a99d;
@@ -783,16 +792,6 @@ html, body {
   font-size: 12px; }
 #graph text, #clone-graph text {
   cursor: default; }
-#graph .over-title, #clone-graph .over-title {
-  font-family: "ACaslonPro-Bold", Arial, Times, serif;
-  font-size: 18px;
-  line-height: 48px;
-  filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
-  opacity: 0; }
-#graph .over-title rect, #clone-graph .over-title rect {
-  opacity: 0.75;
-  fill: #fff;
-  stroke-width: 0; }
 
 #clone-graph {
   z-index: 1;
@@ -1302,6 +1301,10 @@ html, body {
   box-shadow: 0 4px 18px rgba(0,0,0,0.5);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
+  /* Performance optimizations */
+  contain: layout style;
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
 .ch-tooltip.is-pinned {
   pointer-events: auto;
